@@ -1,0 +1,48 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    instance_type: mac_mini_m1
+    max_build_duration: 120
+    environment:
+      groups:
+        - gcloud_credentials
+      vars:
+        XCODE_SCHEME: "Runner"
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Download Flutter app
+        script: |
+         # authenticate with gcloud
+            echo $GCLOUD_STORAGE_KEY > $CM_BUILD_DIR/gcloud_storage_key.json
+            gcloud auth activate-service-account --key-file $CM_BUILD_DIR/gcloud_storage_key.json
+         # download and unzip the project
+            gsutil cp gs://$BUICKET_NAME/onom.zip $HOME/onom.zip
+            unzip -o $HOME/onom.zip -d $CM_BUILD_DIR
+      - name: Run Flutter pub get
+        script: |
+          flutter pub get
+      - name: Install pods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Build unsigned .app
+        script: |
+          xcodebuild -workspace "ios/Runner.xcworkspace" \
+            -scheme "Runner" \
+            -configuration "Debug" \
+            -sdk iphonesimulator \
+            -derivedDataPath ios/output
+      - name: Create a .zip archive
+        script: | 
+          cd ios/output/Build/Products/Debug-iphonesimulator
+          zip -r ios_app_$CLIENT_ID.zip $XCODE_SCHEME.app
+    publishing:
+      scripts:
+        - name: Upload to GCP storage
+          script: |
+            ZIP_PATH="ios/output/Build/Products/Debug-iphonesimulator/ios_app_$CLIENT_ID.zip"
+            gsutil cp $ZIP_PATH gs://$BUCKET_NAME
+      
+            # Optional. Upload to Appetize via their own API.
+            # echo $(curl --location --request POST "https://$API_TOKEN@api.appetize.io/v1/apps/$APP_PUBLIC_KEY" --form "file=@$zipPath")
