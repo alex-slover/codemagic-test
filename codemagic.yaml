@@ -18,8 +18,8 @@ workflows:
             echo $GCLOUD_STORAGE_KEY > $CM_BUILD_DIR/gcloud_storage_key.json
             gcloud auth activate-service-account --key-file $CM_BUILD_DIR/gcloud_storage_key.json
          # download and unzip the project
-            gsutil cp gs://$BUICKET_NAME/onom.zip $HOME/onom.zip
-            unzip -o $HOME/onom.zip -d $CM_BUILD_DIR
+            gsutil cp gs://$BUCKET_NAME/$GCLOUD_ZIP_BUNDLE $HOME/$GCLOUD_ZIP_BUNDLE
+            unzip -o $HOME/$GCLOUD_ZIP_BUNDLE -d $CM_BUILD_DIR
       - name: Run Flutter pub get
         script: |
           flutter pub get
