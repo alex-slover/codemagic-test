@@ -5,7 +5,7 @@ workflows:
     max_build_duration: 120
     environment:
       groups:
-        - gcloud_credentials
+        - google_credentials
       vars:
         XCODE_SCHEME: "Runner"
       flutter: stable
